@@ -1,81 +1,84 @@
-export async function handler(event) {
-  const headers = {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
-
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers };
-  }
-
-  if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: "Method not allowed" }),
-    };
-  }
-
+export default async (req, context) => {
   try {
-    const body = JSON.parse(event.body || "{}");
-    const prompt = body.prompt;
+    // CORS
+    if (req.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+        },
+      });
+    }
+
+    if (req.method !== "POST") {
+      return new Response(
+        JSON.stringify({ error: "Method not allowed" }),
+        { status: 405 }
+      );
+    }
+
+    const { prompt } = await req.json();
 
     if (!prompt) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: "prompt kosong" }),
-      };
+      return new Response(
+        JSON.stringify({ error: "Prompt is required" }),
+        { status: 400 }
+      );
     }
 
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        input: prompt,
-      }),
-    });
-
-    // ⛔ INI KUNCI PENTING
-    if (!response.ok) {
-      const errText = await response.text();
-      return {
-        statusCode: response.status,
-        headers,
+    const groqRes = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+        },
         body: JSON.stringify({
-          error: "OpenAI error",
-          detail: errText,
+          model: "llama-3.1-8b-instant",
+          messages: [
+            { role: "system", content: "You are a helpful assistant." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.7,
         }),
-      };
+      }
+    );
+
+    const data = await groqRes.json();
+
+    if (!groqRes.ok) {
+      return new Response(
+        JSON.stringify({
+          error: "Groq API error",
+          detail: data,
+        }),
+        { status: groqRes.status }
+      );
     }
 
-    const data = await response.json();
-
-    const reply =
-      data?.output_text ||
-      data?.output?.[0]?.content
-        ?.filter(c => c.type === "output_text")
-        ?.map(c => c.text)
-        ?.join("") ||
-      "AI tidak memberi respon";
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ success: true, reply }),
-    };
-
+    return new Response(
+      JSON.stringify({
+        success: true,
+        reply: data.choices[0].message.content,
+      }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    );
   } catch (err) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: err.message }),
-    };
+    return new Response(
+      JSON.stringify({
+        error: "Server error",
+        message: err.message,
+      }),
+      { status: 500 }
+    );
   }
-}
+};
