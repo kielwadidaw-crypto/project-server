@@ -1,5 +1,4 @@
 export async function handler(event) {
-  // CORS
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 204,
@@ -11,7 +10,6 @@ export async function handler(event) {
     };
   }
 
-  // WAJIB POST
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
@@ -24,8 +22,7 @@ export async function handler(event) {
   }
 
   try {
-    const body = JSON.parse(event.body || "{}");
-    const prompt = body.prompt;
+    const { prompt } = JSON.parse(event.body || "{}");
 
     if (!prompt) {
       return {
@@ -38,17 +35,15 @@ export async function handler(event) {
       };
     }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "user", content: prompt }
-        ]
+        model: "gpt-4.1-mini",
+        input: prompt
       })
     });
 
@@ -58,7 +53,7 @@ export async function handler(event) {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
-        reply: data.choices[0].message.content
+        reply: data.output_text
       }),
       headers: {
         "Content-Type": "application/json",
@@ -76,4 +71,4 @@ export async function handler(event) {
       }
     };
   }
-      }
+}
