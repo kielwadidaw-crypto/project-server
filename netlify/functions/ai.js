@@ -14,11 +14,11 @@ export async function handler(event) {
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: "Method not allowed" }),
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*"
-      }
+      },
+      body: JSON.stringify({ error: "Method not allowed" })
     };
   }
 
@@ -28,23 +28,23 @@ export async function handler(event) {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        reply: "Server OK. Prompt diterima: " + prompt
-      }),
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*"
-      }
+      },
+      body: JSON.stringify({
+        success: true,
+        reply: "Server OK. Prompt diterima: " + prompt
+      })
     };
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message }),
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*"
-      }
+      },
+      body: JSON.stringify({ error: err.message })
     };
   }
 }
