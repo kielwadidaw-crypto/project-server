@@ -1,4 +1,5 @@
 export async function handler(event) {
+  // CORS
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 204,
@@ -10,6 +11,7 @@ export async function handler(event) {
     };
   }
 
+  // WAJIB POST
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
@@ -23,7 +25,18 @@ export async function handler(event) {
 
   try {
     const body = JSON.parse(event.body || "{}");
-    const prompt = body.prompt || "Halo";
+    const prompt = body.prompt;
+
+    if (!prompt) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "prompt kosong" }),
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      };
+    }
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -44,6 +57,7 @@ export async function handler(event) {
     return {
       statusCode: 200,
       body: JSON.stringify({
+        success: true,
         reply: data.choices[0].message.content
       }),
       headers: {
@@ -62,4 +76,4 @@ export async function handler(event) {
       }
     };
   }
-}
+      }
