@@ -11,7 +11,6 @@ export async function handler(event) {
     };
   }
 
-  // Hanya POST
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
@@ -51,9 +50,7 @@ export async function handler(event) {
 
     const data = await response.json();
 
-    const reply =
-      data.output?.[0]?.content?.[0]?.text ||
-      "AI tidak memberi respon";
+    const reply = data.output_text || "AI tidak memberi respon";
 
     return {
       statusCode: 200,
