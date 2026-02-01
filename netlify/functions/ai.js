@@ -1,4 +1,5 @@
 export async function handler(event) {
+  // CORS
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 204,
@@ -10,14 +11,15 @@ export async function handler(event) {
     };
   }
 
+  // Hanya POST
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: "Method not allowed" }),
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*"
-      }
+      },
+      body: JSON.stringify({ error: "Method not allowed" })
     };
   }
 
@@ -27,11 +29,11 @@ export async function handler(event) {
     if (!prompt) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "prompt kosong" }),
         headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*"
-        }
+        },
+        body: JSON.stringify({ error: "prompt kosong" })
       };
     }
 
@@ -49,26 +51,30 @@ export async function handler(event) {
 
     const data = await response.json();
 
+    const reply =
+      data.output?.[0]?.content?.[0]?.text ||
+      "AI tidak memberi respon";
+
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        reply: data.output_text
-      }),
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*"
-      }
+      },
+      body: JSON.stringify({
+        success: true,
+        reply
+      })
     };
 
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message }),
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*"
-      }
+      },
+      body: JSON.stringify({ error: err.message })
     };
   }
 }
